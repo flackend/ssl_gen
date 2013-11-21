@@ -57,7 +57,7 @@ send "\r"
 expect eof
 
 # Create certificate by signing CSR
-spawn sign $domain.csr
+spawn sign.sh $domain.csr
 
 expect "Enter pass phrase for ./ca.key:"
 send "1234\r"

@@ -10,7 +10,7 @@
 	|   |   |   |-- site.crt (created here)
 	|   |   |-- .local
 	|   |   |   |-- bin
-	|   |   |   |  |-- sign (sign.sh)
+	|   |   |   |  |-- sign.sh
 	|-- etc
 	|   |-- apache2
 	|   |   |-- extra
@@ -201,9 +201,9 @@ Modify it to use **sha512**:
 	
 ##### File location
 
-I renamed and placed **sign.sh** in my PATH:
+I placed **sign.sh** in my PATH:
 
-	mv sign.sh $HOME/.local/bin/sign
+	mv sign.sh $HOME/.local/bin
 
 ### 4. Create a Certificate Signing Request
 
@@ -225,7 +225,7 @@ You'll need the password from your **ca.key**.
 
 Sign the CSR with our made up Certificate Authority (CA):
 
-	sign example.csr
+	sign.sh example.csr
 	
 This creates **example.crt**.
 
@@ -298,7 +298,7 @@ For the second time around:
 	name=mysite
 	openssl genrsa -des3 1024 > $name.key
 	openssl req -new -key $name.key > $name.csr
-	sign $name.csr
+	sign.sh $name.csr
 	mv $name.key $name.key.original 
 	openssl rsa -in $name.key.original -out $name.key
 	rm $name.key.original $name.csr

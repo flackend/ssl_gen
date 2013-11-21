@@ -1,0 +1,103 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo "Usage: sslgen <domain>"
+    exit 1
+fi
+
+domain=$1
+
+cd $HOME/.ca
+
+/usr/bin/expect<<EOF
+
+# Create CSR key
+spawn openssl genrsa -des3 -out $domain.key 1024
+expect "Enter pass phrase for *.key:"
+send "1234\r"
+expect "Verifying - Enter pass phrase for *.key:"
+send "1234\r"
+
+expect eof
+
+# Create CSR
+spawn openssl req -new -key $domain.key -out $domain.csr
+expect "Enter pass phrase for *:"
+send "1234\r"
+
+# Country
+expect "]:"
+send "US\r"
+# State or Province
+expect "]:"
+send "Ohio\n"
+# Locality/City
+expect "]:"
+send "\r"
+# Organization/Company
+expect "]:"
+send "$domain\r"
+# Organizational Unit Name/Section
+expect "]:"
+send "\r"
+# Common Name (e.g. server FQDN or YOUR name)
+expect "]:"
+send "$domain\r"
+# Email Address
+expect "]:"
+send "\r"
+# A challenge password
+expect "]:"
+send "\r"
+# An optional company name
+expect "]:"
+send "\r"
+
+expect eof
+
+# Create certificate by signing CSR
+spawn sign $domain.csr
+
+expect "Enter pass phrase for ./ca.key:"
+send "1234\r"
+# Sign the certificate?
+expect "]:"
+send "y\r"
+# 1 out of 1 certificate requests certified, commit?
+expect "]"
+send "y\r"
+
+expect eof
+
+# Remove password from key
+spawn openssl rsa -in $domain.key -out $domain.key.new
+expect "Enter pass phrase for *:"
+send "1234\r"
+
+expect eof
+
+EOF
+
+# Remove the old key
+rm $domain.key
+# Rename the new key
+mv $domain.key.new $domain.key
+# Remove the CSR
+rm $domain.csr
+# Remove the CA database files
+rm -fr ca.db*
+# Move out new key and certificate to the Apache SSL directory
+mv $domain.key /etc/apache2/ssl/
+mv $domain.crt /etc/apache2/ssl/
+
+echo "Certificate created:"
+ls -l /etc/apache2/ssl/$domain*
+
+/usr/bin/pbcopy<<EOF
+SSLEngine on
+SSLCertificateFile /etc/apache2/ssl/$domain.crt
+SSLCertificateKeyFile /etc/apache2/ssl/$domain.key
+EOF
+
+subl -n /etc/apache2/extra/httpd-vhosts.conf
